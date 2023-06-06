@@ -31,6 +31,22 @@ namespace ns_util
         {
             return AddSuffix(file_name, ".exe");
         }
+        // 构建编译后报错信息的完整路径 + 后缀名
+        static std::string CompileError(const std::string &file_name)
+        {
+            return AddSuffix(file_name, ".compile_error");
+        }
+
+        // 构建该程序的对应的标准输入完整的路径 + 后缀名
+        static std::string Stdin(const std::string &file_name)
+        {
+            return AddSuffix(file_name, ".stdin");
+        }
+        // 构建该程序的对应的标准输出完整的路径 + 后缀名
+        static std::string Stdout(const std::string &file_name)
+        {
+            return AddSuffix(file_name, ".stdout");
+        }
         // 构建该程序的对应的标准错误完整的路径 + 后缀名
         static std::string Stderr(const std::string &file_name)
         {

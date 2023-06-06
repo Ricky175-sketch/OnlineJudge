@@ -29,8 +29,8 @@ namespace ns_compiler
         {
         }
         /*
+            输入参数：编译的文件名，不需要带文件后缀
             返回值：编译成功-true，编译失败-false
-            输入参数：编译的文件名
         */
         static bool Compile(const std::string &file_name)
         {
@@ -40,15 +40,17 @@ namespace ns_compiler
                 LOG(ERROR) << "内部错误，创建子进程失败" << "\n";
                 return false;
             }
-            else if (pid == 0)
+            else if (pid == 0) // 子进程
             {
-                int _stderr = open(PathUtil::Stderr(file_name).c_str(), O_CREAT | O_WRONLY, 0644);
-                if (_stderr < 0) {
+                // 防止平台的不同对生成文件的权限产生影响
+                umask(0);
+                int _stderr_fd = open(PathUtil::CompileError(file_name).c_str(), O_CREAT | O_WRONLY, 0644);
+                if (_stderr_fd < 0) {
                     LOG(WARNING) << "stderr文件生成失败" << "\n";
                     exit(1);
                 }
-                // 重定向标准错误到_stderr
-                dup2(_stderr, 2);
+                // 重定向标准错误到_stderr_fd
+                dup2(_stderr_fd, 2);
 
                 // 子进程：调用编译器，完成对代码的编译
                 execlp("g++", "g++", "-o", PathUtil::Exe(file_name).c_str(), PathUtil::Src(file_name).c_str(), "-std=c++11", nullptr/*参数传递完毕必须以null作为结束*/);
