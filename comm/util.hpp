@@ -44,7 +44,7 @@ namespace ns_util
         static bool IsFileExists(const std::string &path_name)
         {
             struct stat st;
-            if (stat(path_name.c_str(), &st))
+            if (stat(path_name.c_str(), &st) == 0)
             {
                 // 获取文件属性成功，就代表文件存在
                 return true;

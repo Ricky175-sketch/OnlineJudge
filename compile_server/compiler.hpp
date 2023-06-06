@@ -51,7 +51,7 @@ namespace ns_compiler
                 dup2(_stderr, 2);
 
                 // 子进程：调用编译器，完成对代码的编译
-                execlp("g++", "-o", PathUtil::Exe(file_name).c_str(), PathUtil::Src(file_name).c_str(), "-std=c++11", nullptr/*参数传递完毕必须以null作为结束*/);
+                execlp("g++", "g++", "-o", PathUtil::Exe(file_name).c_str(), PathUtil::Src(file_name).c_str(), "-std=c++11", nullptr/*参数传递完毕必须以null作为结束*/);
 
                 LOG(ERROR) << "g++启动失败，可能是参数错误" << "\n";
 
@@ -70,6 +70,7 @@ namespace ns_compiler
                  
             }
 
+            LOG(DEBUG) << PathUtil::Src(file_name) << "\n";
             LOG(ERROR) << "编译失败，没有形成可执行程序" << "\n";
 
             return false;
