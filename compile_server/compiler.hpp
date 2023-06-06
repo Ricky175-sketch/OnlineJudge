@@ -29,6 +29,7 @@ namespace ns_compiler
         {
         }
         /*
+            编译程序
             输入参数：编译的文件名，不需要带文件后缀
             返回值：编译成功-true，编译失败-false
         */

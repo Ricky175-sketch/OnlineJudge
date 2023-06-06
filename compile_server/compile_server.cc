@@ -8,7 +8,7 @@ int main()
 {
     std::string code = "code";
     Compiler::Compile(code);
-    Runner::Run(code);
-    
+    Runner::Run(code, 1, 20);
+
     return 0;
 }
