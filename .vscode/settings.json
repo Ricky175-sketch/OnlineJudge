@@ -49,6 +49,9 @@
         "cinttypes": "cpp",
         "tuple": "cpp",
         "utility": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "condition_variable": "cpp",
+        "csignal": "cpp",
+        "regex": "cpp"
     }
 }
