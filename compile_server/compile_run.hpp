@@ -137,7 +137,7 @@ namespace ns_compile_and_run
                 break;
             case -3:
                 // TODO错误处理
-                FileUtil::ReadFile(PathUtil::Stderr(file_name), &desc, true);
+                FileUtil::ReadFile(PathUtil::CompileError(file_name), &desc, true);
                 break;
             case SIGABRT:
                 desc = "内存使用超过限制";
