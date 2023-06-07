@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+#include <atomic>
+#include <fstream>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,6 +12,30 @@
 namespace ns_util
 {
     const std::string temp_path = "./temp/";
+
+    class TimeUtil
+    {
+    public:
+        /*
+            获得秒级时间戳
+        */ 
+        static std::string GetTimeStamp()
+        {
+            struct timeval _time;
+            gettimeofday(&_time, nullptr);
+            return std::to_string(_time.tv_sec);
+        }
+
+        /*
+            获得毫秒级时间戳
+        */
+        static std::string GetTimeMs()
+        {
+            struct timeval _time;
+            gettimeofday(&_time, nullptr);
+            return std::to_string(_time.tv_sec * 1000 + _time.tv_usec / 1000);
+        }
+    };
 
     class PathUtil
     {
@@ -57,6 +83,11 @@ namespace ns_util
     class FileUtil
     {
     public:
+        /*
+            判断文件是否存在
+            参数：文件所在的的路径
+            返回值：存在-true 不存在-false
+        */
         static bool IsFileExists(const std::string &path_name)
         {
             struct stat st;
@@ -67,16 +98,55 @@ namespace ns_util
             }
             return false;
         }
-    };
 
-    class TimeUtil
-    {
-    public:
-        static std::string GetTimeStamp()
+        /*
+            生成唯一的文件名，毫秒级时间戳+原子性递增唯一值
+        */
+        static std::string UniqueFileName()
         {
-            struct timeval _time;
-            gettimeofday(&_time, nullptr);
-            return std::to_string(_time.tv_sec);
+            static std::atomic_uint id(0);
+            id++;
+
+            std::string ms = TimeUtil::GetTimeMs();
+            std::string unique_id = std::to_string(id);
+
+            return ms + "_" + unique_id;
+        }
+
+        /*
+            将内容写入到目标文件中
+        */
+        static bool WriteFile(const std::string &target, const std::string &content)
+        {
+            std::ofstream out(target);
+            if (!out.is_open())
+                return false;
+            out.write(content.c_str(), content.size());
+            out.close();
+            return true;
+        }
+
+        /*
+            从指定文件中读取内容
+        */
+        static bool ReadFile(const std::string &target, std::string *content, bool keep_line_break = false)
+        {
+            (*content).clear();
+
+            std::ifstream in(target);
+            if (in.is_open())
+                return false;
+
+            std::string line;
+            // 使用getline进行读取时不会保留"\n"
+            while (std::getline(in, line))
+            {
+                (*content) += line;
+                (*content) += (keep_line_break ? "\n" : "");
+                line.clear();
+            }
+            in.close();
+            return true;
         }
     };
 }
