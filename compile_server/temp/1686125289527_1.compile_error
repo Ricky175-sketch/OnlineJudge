@@ -1,7 +1,0 @@
-./temp/1686125289527_1.cpp: In function ‘int main()’:
-./temp/1686125289527_1.cpp:5:5: error: ‘aaaaaa’ was not declared in this scope
-     aaaaaa
-     ^
-./temp/1686125289527_1.cpp:6:5: error: expected ‘;’ before ‘return’
-     return 0;
-     ^

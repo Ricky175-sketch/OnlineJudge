@@ -1,4 +1,0 @@
-./temp/1686125278815_1.cpp: In function ‘int main()’:
-./temp/1686125278815_1.cpp:6:7: warning: division by zero [-Wdiv-by-zero]
-     a /= 0;
-       ^

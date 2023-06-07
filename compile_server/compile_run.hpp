@@ -116,6 +116,8 @@ namespace ns_compile_and_run
 
             Json::StyledWriter writer;
             *out_json = writer.write(out_value);
+
+            RemoveTempFile(file_name);
         }
 
         /*
@@ -153,7 +155,40 @@ namespace ns_compile_and_run
                 desc = "未知状态码：" + std::to_string(code);
                 break;
             }
+            
             return desc;
+        }
+
+        /*
+            移除临时文件
+        */
+        static void RemoveTempFile(const std::string &file_name)
+        {
+            using std::string;
+            
+            string _src = PathUtil::Src(file_name);
+            if (FileUtil::IsFileExists(_src))
+                unlink(_src.c_str());
+            
+            string _execute = PathUtil::Exe(file_name);
+            if (FileUtil::IsFileExists(_execute))
+                unlink(_execute.c_str());
+            
+            string _compile_error = PathUtil::CompileError(file_name);
+            if (FileUtil::IsFileExists(_compile_error))
+                unlink(_compile_error.c_str());
+
+            string _stdin = PathUtil::Stdin(file_name);
+            if (FileUtil::IsFileExists(_stdin))
+                unlink(_stdin.c_str());
+
+            string _stdout = PathUtil::Stdout(file_name);
+            if (FileUtil::IsFileExists(_stdout))
+                unlink(_stdout.c_str());
+
+            string _stderr = PathUtil::Stderr(file_name);
+            if (FileUtil::IsFileExists(_stderr))
+                unlink(_stderr.c_str());
         }
     };
 }
