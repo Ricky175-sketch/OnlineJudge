@@ -1,14 +1,12 @@
+#include <cstdio>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <map>
 #include <algorithm>
-
-using namespace std;
+#include <vector>
 
 class Solution {
 public:
-    bool isPalindrome(int x) {
+    std::vector<int> quickSort(std::vector<int> nums) {
         //请将你的代码写在这里
     }
 };
