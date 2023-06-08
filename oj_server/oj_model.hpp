@@ -5,6 +5,8 @@
 #include <cassert>
 #include <vector>
 #include <unordered_map>
+#include <fstream>
+#include <cstdlib>
 
 #include "../comm/log.hpp"
 
@@ -26,6 +28,7 @@ namespace ns_model
     };
 
     const std::string questions_list_file = "./questions/questions.list";
+    const std::string question_path = "./questions/";
     class Model
     {
     private:
@@ -41,23 +44,76 @@ namespace ns_model
         */
         bool LoadQuestionList(const std::string &question_list)
         {
+            std::ifstream in(questions_list_file);
+            if (!in.is_open())
+            {
+                LOG(FATAL) << "题库文件加载失败，请检查questions.list文件是否存在" << "\n";
+                return false;
+            }
+            
+            std::string line;
+            while (std::getline(in, line))
+            {
+                std::vector<std::string> tokens;
+                StringUtil::SplitString(line, &tokens, " ");
 
+                if (tokens.size() != 5)
+                {
+                    LOG(WARNING) << "加载questions.list时部分题目加载失败，请检查格式是否正确" << "\n";
+                    continue;
+                }
+                
+                Question q;
+                q.number = tokens[0];
+                q.title = tokens[1];
+                q.star = tokens[2];
+                q.cpu_limit = atoi(tokens[3].c_str());
+                q.mem_limit = atoi(tokens[4].c_str());
+
+                std::string de_question_path = question_path + q.number + "/";
+                FileUtil::ReadFile(de_question_path + "desc.txt", &q.desc, true);
+                FileUtil::ReadFile(de_question_path + "header.cpp", &q.header, true);
+                FileUtil::ReadFile(de_question_path + "tail.cpp", &q.tail, true);
+
+                quesions.insert({q.number, q});
+            }
+
+            LOG(INFO) << "题库加载成功" << "\n";
+            in.close();
         }
 
         /*
             获取所有的题目
         */
-        void GetAllQuestions(std::vector<Question> *out)
+        bool GetAllQuestions(std::vector<Question> *out)
         {
+            if (quesions.empty())
+            {
+                LOG(ERROR) << "获取题库失败" << "\n";
+                return false;
+            }
+            
+            for (const auto &q : quesions)
+                out->push_back(q.second);
 
+            return true;
         }
 
         /*
             获取指定题号的题目
         */
-        void GetOneQuestion(const std::string &number, Question *q)
+        bool GetOneQuestion(const std::string &number, Question *q)
         {
+            const auto &iter = quesions.find(number);
 
+            if (iter == quesions.end())
+            {
+                LOG(ERROR) << "获取该题失败" << "\n";
+                return false;
+            }
+            
+            (*q) = iter->second;
+            return true;
         }
 
         ~Model() = default;

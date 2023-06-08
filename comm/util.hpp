@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <boost/algorithm/string.hpp>
 
 namespace ns_util
 {
@@ -146,6 +147,18 @@ namespace ns_util
             }
             in.close();
             return true;
+        }
+    };
+
+    class StringUtil
+    {
+    public:
+        /*
+            将字符串str按sep进行分割并输出到target数组中
+        */
+        static void SplitString(const std::string &str, std::vector<std::string> *target, const std::string &sep)
+        {
+            boost::split(*target, str, boost::is_any_of(sep), boost::algorithm::token_compress_on);
         }
     };
 }
