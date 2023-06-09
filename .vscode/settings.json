@@ -65,6 +65,7 @@
         "string_view": "cpp",
         "variant": "cpp",
         "strstream": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "unordered_set": "cpp"
     }
 }

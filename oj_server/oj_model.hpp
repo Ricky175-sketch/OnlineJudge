@@ -78,11 +78,13 @@ namespace ns_model
                 FileUtil::ReadFile(de_question_path + "header.cpp", &q.header, true);
                 FileUtil::ReadFile(de_question_path + "tail.cpp", &q.tail, true);
 
-                quesions.insert({q.number, q});
+                 quesions.insert({q.number, q});
             }
 
             LOG(INFO) << "题库加载成功" << "\n";
             in.close();
+
+            return true;
         }
 
         /*

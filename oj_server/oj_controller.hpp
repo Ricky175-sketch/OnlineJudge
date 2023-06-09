@@ -7,6 +7,7 @@
 #include "../comm/util.hpp"
 #include "../comm/log.hpp"
 #include "oj_model.hpp"
+#include "oj_view.hpp"
 
 namespace ns_controller
 {
@@ -16,11 +17,14 @@ namespace ns_controller
     using namespace ns_log;
     // 引入Model模块
     using namespace ns_model;
+    // 引入View模块
+    using namespace ns_view;
 
     class Controller
     {
     private:
         Model model_;
+        View view_;
     public:
         Controller() = default;
         ~Controller() = default;
@@ -33,11 +37,13 @@ namespace ns_controller
             std::vector<struct Question> all;
             if (model_.GetAllQuestions(&all))
             {
-                
+                view_.ExpandAllQuestions(all, html);
+                return true;
             }
             else
             {
-
+                *html = "加载所有题目失败";
+                return false;
             }
         }
 
@@ -49,11 +55,13 @@ namespace ns_controller
             struct Question q;
             if (model_.GetOneQuestion(number, &q))
             {
-
+                view_.ExpandOneQuestion(q, html);
+                return true;
             }
             else
             {
-
+                *html = "加载该条题目失败";
+                return false;
             }
         }
 

@@ -12,12 +12,16 @@ int main()
     Controller controller;
 
     server.Get("/all_questions", [&controller](const Request &req, Response &resp) {
-        resp.set_content("", "text/plain; charset=utf-8");
+        std::string html;
+        controller.AllQuestions(&html);
+        resp.set_content(html, "text/html; charset=utf-8");
     });
 
-    server.Get(R"(/questions/(\d+))", [&controller](const Request &req, Response &resp) {
+    server.Get(R"(/question/(\d+))", [&controller](const Request &req, Response &resp) {
+        std::string html;
         std::string number = req.matches[1];
-        resp.set_content(number, "text/plain; charset=utf-8");
+        controller.Question(number, &html);
+        resp.set_content(html, "text/html; charset=utf-8");
     });
 
     server.Get(R"(/judge/(\d+))", [&controller](const Request &req, Response &resp) {
