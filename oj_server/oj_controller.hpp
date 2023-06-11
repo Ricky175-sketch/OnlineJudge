@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <fstream>
 #include <cassert>
 
 #include "../comm/util.hpp"
@@ -29,7 +30,7 @@ namespace ns_controller
         std::string ip;  // 编译服务的ip
         int port;        // 编译服务的port
         uint64_t load;   // 编译服务的负载
-        std::mutex *mtx; // 负载锁
+        std::mutex *mtx; // 负载锁（这里使用指针，因为mutex是无法被复制的）
     public:
         Machine() : ip(""), port(0), load(0), mtx(nullptr)
         {}
@@ -73,9 +74,39 @@ namespace ns_controller
         {
             Machine::mtx = mtx;
         }
+
+        // 安全地递增负载
+        void IncreaseLoad()
+        {
+            if (mtx)
+                mtx->lock();
+            ++load;
+            if (mtx)
+                mtx->unlock();
+        }
+        // 安全地递减负载
+        void DecreaseLoad()
+        {
+            if (mtx)
+                mtx->lock();
+            --load;
+            if (mtx)
+                mtx->unlock();
+        }
+        // 安全地获取负载
+        uint64_t Load()
+        {
+            uint64_t ret = -1;
+            if (mtx)
+                mtx->lock();
+            ret = load;
+            if (mtx)
+                mtx->unlock();
+            return ret;
+        }
     };
 
-    const std::string machine_conf_path = "./conf/service_machine.conf"
+    const std::string machine_conf_path = "./conf/service_machine.conf";
     // 负载均衡模块
     class LoadBalance
     {
@@ -83,20 +114,72 @@ namespace ns_controller
         std::vector<Machine> machines; // 可以提供编译服务的机器
         std::vector<int> online;       // 所有在线主机的id（id为每一台主机在machines中的下标）
         std::vector<int> offline;      // 所有离线主机的id
+        std::mutex mtx;                // 保证LoadBalance数据的安全
     public:
         LoadBalance()
         {
             assert(LoadConf(machine_conf_path));
+            LOG(INFO) << "加载 " << machine_conf_path << " 成功" << "\n";
         }
         ~LoadBalance() = default;
 
-        bool LoadConf(const std::string &machine_list)
+        bool LoadConf(const std::string &machine_conf)
         {
+            std::ifstream in(machine_conf);
+            if (!in.is_open())
+            {
+                LOG(FATAL) << "加载 " << machine_conf << " 文件失败" << "\n";
+                return false;
+            }
+            std::string line;
+            while (std::getline(in, line))
+            {
+                std::vector<std::string> tokens;
+                StringUtil::SplitString(line, &tokens, ":");
+                if (tokens.size() != 2)
+                {
+                    LOG(WARNING) << "切分 " << line << " 失败" << "\n";
+                    continue;
+                }
+                Machine m;
+                m.setIp(tokens[0]);
+                m.setPort(atoi(tokens[1].c_str()));
+                m.setLoad(0);
+                m.setMtx(new std::mutex());
 
+                online.push_back(machines.size());
+                machines.push_back(m);
+            }
+
+            in.close();
+            return true;
         }
-        bool SmartChoice()
+        bool SmartChoice(int *id, Machine *m)
         {
+            // 使用选择好的主机
+            mtx.lock();
+            int online_machine_num = online.size();
+            if (online_machine_num == 0)
+            {
+                mtx.unlock();
+                LOG(FATAL) << "编译服务主机全部离线" << "\n";
+                return false;
+            }
 
+            // 找到负载最小的机器
+            uint64_t min_load = machines[online[0]].getLoad();
+            for (int i = 0; i < online.size(); i++)
+            {
+                uint64_t cur_load = machines[online[i]].getLoad();
+                if (cur_load < min_load)
+                {
+                    min_load = cur_load;
+                    *id = online[i];
+                    *m = machines[online[i]];
+                }
+            }
+            mtx.unlock();
+            return true;
         }
         void OfflineMachine()
         {
@@ -104,7 +187,7 @@ namespace ns_controller
         }
         void OnlineMachine()
         {
-            
+
         }
     };
 
@@ -112,8 +195,9 @@ namespace ns_controller
     class Controller
     {
     private:
-        Model model_;
-        View view_;
+        Model model_;              // 提供后台数据
+        View view_;                // 渲染html页面
+        LoadBalance load_balance_; // 负载均衡器
     public:
         Controller() = default;
         ~Controller() = default;
