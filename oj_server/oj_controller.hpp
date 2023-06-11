@@ -6,9 +6,11 @@
 #include <mutex>
 #include <fstream>
 #include <cassert>
+#include <jsoncpp/json/json.h>
 
 #include "../comm/util.hpp"
 #include "../comm/log.hpp"
+#include "../comm/httplib.h"
 #include "oj_model.hpp"
 #include "oj_view.hpp"
 
@@ -22,6 +24,8 @@ namespace ns_controller
     using namespace ns_model;
     // 引入View模块
     using namespace ns_view;
+    // 引入http库
+    using namespace httplib;
 
     // 提供服务的主机
     class Machine
@@ -96,7 +100,7 @@ namespace ns_controller
         // 安全地获取负载
         uint64_t Load()
         {
-            uint64_t ret = -1;
+            uint64_t ret = 0;
             if (mtx)
                 mtx->lock();
             ret = load;
@@ -154,7 +158,7 @@ namespace ns_controller
             in.close();
             return true;
         }
-        bool SmartChoice(int *id, Machine *m)
+        bool SmartChoice(int *id, Machine **m)
         {
             // 使用选择好的主机
             mtx.lock();
@@ -168,26 +172,52 @@ namespace ns_controller
 
             // 找到负载最小的机器
             uint64_t min_load = machines[online[0]].getLoad();
-            for (int i = 0; i < online.size(); i++)
+            *id = online[0];
+            *m = &machines[online[0]];
+            for (int i = 1; i < online.size(); i++)
             {
                 uint64_t cur_load = machines[online[i]].getLoad();
                 if (cur_load < min_load)
                 {
                     min_load = cur_load;
                     *id = online[i];
-                    *m = machines[online[i]];
+                    *m = &machines[online[i]];
                 }
             }
             mtx.unlock();
             return true;
         }
-        void OfflineMachine()
+        void OfflineMachine(int id)
         {
-
+            mtx.lock();
+            for (auto it = online.begin(); it != online.end(); it++)
+            {
+                if (*it = id)
+                {
+                    online.erase(it);
+                    offline.emplace_back(*it);
+                    break;
+                }
+            }
+            mtx.unlock();
         }
-        void OnlineMachine()
+        void OnlineMachine(int id)
         {
-
+            // TODO
+        }
+        // 用于测试的函数
+        void ShowMachines()
+        {
+            mtx.lock();
+            std::cout << "当前在线主机列表：";
+            for (auto id : online)
+                std::cout << id << " ";
+            std::cout << std::endl;
+            std::cout << "当前离线主机列表：";
+            for (auto id : offline)
+                std::cout << id << " ";
+            std::cout << std::endl;
+            mtx.unlock();
         }
     };
 
@@ -241,9 +271,62 @@ namespace ns_controller
         /*
             提供判题功能
         */
-        void Judge(const std::string in_json, std::string *out_json)
+        void Judge(const std::string &number, const std::string in_json, std::string *out_json)
         {
-            
+            // 根据题目编号获取题目信息
+            struct Question q;
+            model_.GetOneQuestion(number, &q);
+
+            // 解析json得到用户提交的代码
+            Json::Reader reader;
+            Json::Value in_value;
+            reader.parse(in_json, in_value);
+
+            // 代码拼接
+            Json::Value compile_value;
+            compile_value["input"] = in_value["input"];
+            compile_value["code"] = in_value["code"].asString(), q.tail;
+            compile_value["cpu_limit"] = q.cpu_limit;
+            compile_value["mem_limit"] = q.mem_limit;
+            Json::FastWriter writer;
+            std::string compile_json = writer.write(compile_value);
+
+            // 选择负载最低的主机（一直选择，直到找到可用的主机）
+            while (true)
+            {
+                int id = 0;
+                Machine *m = nullptr;
+                if (!load_balance_.SmartChoice(&id, &m))
+                    break;
+                
+                LOG(INFO) << "成功选择了" << id << "号主机，地址：" << m->getIp() << ":" << m->getPort() << "\n";
+                
+                // 发起http请求，得到结果
+                Client client(m->getIp(), m->getPort());
+                m->IncreaseLoad();
+                if (auto res = client.Post("/compile_and_run", compile_json, "application/json;charset=utf-8"))
+                {
+                    // 将请求得到的结果向上返回
+                    if (res->status == 200)
+                    {
+                        *out_json = res->body;
+                        m->DecreaseLoad();
+                        LOG(INFO) << "请求编译和运行服务成功" << "\n";
+                        break;
+                    }
+                        
+                    m->DecreaseLoad();
+                }
+                else
+                {
+                    LOG(ERROR) << "当前请求的" << id << "号主机" << m->getIp() << ":" << m->getPort()  << "可能已经离线" << "\n";
+                    m->DecreaseLoad();
+                    // 离线主机
+                    load_balance_.OfflineMachine(id);
+                    load_balance_.ShowMachines();
+                }
+            }
+
         }
     };
 }
