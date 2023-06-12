@@ -1,7 +1,7 @@
 .PHONY:clean
 
 oj_server:oj_server.cc
-	g++ -o $@ $^ -std=c++11 -lpthread -lctemplate
+	g++ -o $@ $^ -std=c++11 -lpthread -lctemplate -ljsoncpp
 
 clean:
 	rm -f oj_server

@@ -24,9 +24,11 @@ int main()
         resp.set_content(html, "text/html; charset=utf-8");
     });
 
-    server.Get(R"(/judge/(\d+))", [&controller](const Request &req, Response &resp) {
+    server.Post(R"(/judge/(\d+))", [&controller](const Request &req, Response &resp) {
         std::string number = req.matches[1];
-        resp.set_content(number, "text/plain; charset=utf-8");
+        std::string result_json;
+        controller.Judge(number, req.body, &result_json);
+        resp.set_content(result_json, "application/json; charset=utf-8");
     });
 
     server.set_base_dir("./wwwroot");

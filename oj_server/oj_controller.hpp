@@ -285,7 +285,7 @@ namespace ns_controller
             // 代码拼接
             Json::Value compile_value;
             compile_value["input"] = in_value["input"];
-            compile_value["code"] = in_value["code"].asString(), q.tail;
+            compile_value["code"] = in_value["code"].asString() + q.tail;
             compile_value["cpu_limit"] = q.cpu_limit;
             compile_value["mem_limit"] = q.mem_limit;
             Json::FastWriter writer;

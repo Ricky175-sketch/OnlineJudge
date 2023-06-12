@@ -73,10 +73,10 @@ namespace ns_model
                 q.cpu_limit = atoi(tokens[3].c_str());
                 q.mem_limit = atoi(tokens[4].c_str());
 
-                std::string de_question_path = question_path + q.number + "/";
-                FileUtil::ReadFile(de_question_path + "desc.txt", &q.desc, true);
-                FileUtil::ReadFile(de_question_path + "header.cpp", &q.header, true);
-                FileUtil::ReadFile(de_question_path + "tail.cpp", &q.tail, true);
+                std::string this_question_path = question_path + q.number + "/";
+                FileUtil::ReadFile(this_question_path + "desc.txt", &q.desc, true);
+                FileUtil::ReadFile(this_question_path + "header.cpp", &q.header, true);
+                FileUtil::ReadFile(this_question_path + "tail.cpp", &q.tail, true);
 
                  quesions.insert({q.number, q});
             }
