@@ -9,6 +9,7 @@
         charset="utf-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ext-language_tools.js" type="text/javascript"
         charset="utf-8"></script>
+    <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
 
     <style>
         * {
@@ -54,7 +55,7 @@
             float: left;
             overflow: scroll;
         }
-        .container .middle .left h4 {
+        .container .middle .left h3 {
             padding-top: 10px;
             padding-left: 10px;
         }
@@ -79,6 +80,11 @@
         .container .bottom .result {
             width: 300px;
             float: left;
+            margin-top: 15px;
+            margin-left: 15px;
+        }
+        .container .bottom .result pre {
+            font-size: large;
         }
         .container .bottom .btn-submit {
             width: 100px;
@@ -107,7 +113,7 @@
         </div>
         <div class="middle">
             <div class="left">
-                <h4>{{number}}. {{title}}    {{star}}</h4>
+                <h3><span id="number">{{number}}</span>. {{title}}    {{star}}</h3>
                 <pre>{{desc}}</pre>
             </div>
             <div class="right">
@@ -141,7 +147,37 @@
         });
 
         function submit() {
+            // 收集题目编号、代码和请求的地址
+            var number = $(".container .middle .left h3 #number").text();
+            var code = editor.getSession().getValue();
+            var judge_url = "/judge/" + number;
             
+            // 构建json向后端发起请求
+            $.ajax({
+                method: 'post',
+                url: judge_url,
+                dataType: 'json',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify({
+                    'code': code,
+                    input: ''
+                }),
+                success: function(data) {
+                    show_result(data);
+                }
+            })
+
+            // 将结果显示到网页中
+            function show_result(data) {
+                var result_div = $(".container .bottom .result");
+                result_div.empty();
+
+                $('<p>', {text: data.reason}).appendTo(result_div);
+                if (data.status == 0) {
+                    $('<pre>', {text: data.stdout}).appendTo(result_div);
+                    $('<pre>', {text: data.stderr}).appendTo(result_div);
+                }
+            }
         }
     </script>
 </body>
