@@ -5,7 +5,7 @@
 void Test1()
 {
     bool ret = Solution().isPalindrome(121);
-    if (ret)
+    if (ret == true)
         std::cout << "用例1通过！" << std::endl;
     else
         std::cout << "用例1未通过！" << std::endl;
@@ -14,7 +14,7 @@ void Test1()
 void Test2()
 {
     bool ret = Solution().isPalindrome(-10);
-    if (!ret)
+    if (ret == false)
         std::cout << "用例2通过！" << std::endl;
     else
         std::cout << "用例2未通过！" << std::endl;

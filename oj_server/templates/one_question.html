@@ -1,13 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{number}}.{{title}}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" type="text/javascript"
+        charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ext-language_tools.js" type="text/javascript"
+        charset="utf-8"></script>
+
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        .container .navbar {
+            width: 100%;
+            height: 50px;
+            background-color: black;
+            overflow: hidden;
+        }
+        .container .navbar a {
+            display: inline-block;
+            width: 80px;
+            text-decoration: none;
+            text-align: center;
+            font-size: larger;
+            color: white;
+            line-height: 50px;
+            margin-left: 50px;
+        }
+        .container .navbar a:hover {
+            background-color: grey;
+        }
+        .container .navbar .login {
+            float: right;
+        }
+
+        .container .middle {
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+        }
+        .container .middle .left {
+            width: 50%;
+            height: 600px;
+            float: left;
+            overflow: scroll;
+        }
+        .container .middle .left h4 {
+            padding-top: 10px;
+            padding-left: 10px;
+        }
+        .container .middle .left pre {
+            padding-top: 10px;
+            padding-left: 10px;
+            font-size: medium;
+            font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        }
+        .container .middle .right {
+            width: 50%;
+            float: right;
+        }
+        .container .middle .right .ace_editor {
+            height: 600px;
+        }
+
+        .container .bottom {
+            width: 100%;
+            overflow: hidden;
+        }
+        .container .bottom .result {
+            width: 300px;
+            float: left;
+        }
+        .container .bottom .btn-submit {
+            width: 100px;
+            height: 50px;
+            font-size: large;
+            float: right;
+            color: white;
+            background-color: #2CBB5D;
+            border: none;
+            border-radius: 3px;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        .container .bottom button:hover {
+            color: #006c26;
+        }
+    </style>
 </head>
+
 <body>
-    <h4>{{number}}.{{title}}.{{star}}</h4>
-    <p>{{desc}}</p>
-    <textarea name="code" cols="30" rows="10">{{pre_code}}</textarea>
+    <div class="container">
+        <div class="navbar">
+            <a href="/"">首页</a>
+            <a href="/all_questions">题库</a>
+            <a class="login" href="#">登录</a>
+        </div>
+        <div class="middle">
+            <div class="left">
+                <h4>{{number}}. {{title}}    {{star}}</h4>
+                <pre>{{desc}}</pre>
+            </div>
+            <div class="right">
+                <pre id="code" class="ace_editor"><textarea class="ace_text-input">{{pre_code}}</textarea></pre>
+            </div>
+        </div>
+        <div class="bottom">
+            <div class="result"></div>
+            <button class="btn-submit" onclick="submit()">提交</button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化对象
+        editor = ace.edit("code");
+        // 设置风格和语言（更多风格和语言，请到github上相应目录查看）
+        editor.setTheme("ace/theme/dracula");
+        editor.session.setMode("ace/mode/c_cpp");
+        // 字体大小
+        editor.setFontSize(16);
+        // 设置默认制表符的大小:
+        editor.getSession().setTabSize(4);
+        // 设置只读（true时只读，用于展示代码）
+        editor.setReadOnly(false);
+        // 启用提示菜单
+        ace.require("ace/ext/language_tools");
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        });
+
+        function submit() {
+            
+        }
+    </script>
 </body>
+
 </html>

@@ -6,6 +6,7 @@
 #include <mutex>
 #include <fstream>
 #include <cassert>
+#include <unistd.h>
 #include <jsoncpp/json/json.h>
 
 #include "../comm/util.hpp"
@@ -30,7 +31,7 @@ namespace ns_controller
     // 提供服务的主机
     class Machine
     {
-    private:
+    public:
         std::string ip;  // 编译服务的ip
         int port;        // 编译服务的port
         uint64_t load;   // 编译服务的负载
@@ -39,45 +40,6 @@ namespace ns_controller
         Machine() : ip(""), port(0), load(0), mtx(nullptr)
         {}
         ~Machine() = default;
-        const std::string &getIp() const
-        {
-            return ip;
-        }
-
-        void setIp(const std::string &ip)
-        {
-            Machine::ip = ip;
-        }
-
-        int getPort() const
-        {
-            return port;
-        }
-
-        void setPort(int port)
-        {
-            Machine::port = port;
-        }
-
-        uint64_t getLoad() const
-        {
-            return load;
-        }
-
-        void setLoad(uint64_t load)
-        {
-            Machine::load = load;
-        }
-
-        std::mutex *getMtx() const
-        {
-            return mtx;
-        }
-
-        void setMtx(std::mutex *mtx)
-        {
-            Machine::mtx = mtx;
-        }
 
         // 安全地递增负载
         void IncreaseLoad()
@@ -146,10 +108,10 @@ namespace ns_controller
                     continue;
                 }
                 Machine m;
-                m.setIp(tokens[0]);
-                m.setPort(atoi(tokens[1].c_str()));
-                m.setLoad(0);
-                m.setMtx(new std::mutex());
+                m.ip = tokens[0];
+                m.port = atoi(tokens[1].c_str());
+                m.load = 0;
+                m.mtx = new std::mutex();
 
                 online.push_back(machines.size());
                 machines.push_back(m);
@@ -171,12 +133,12 @@ namespace ns_controller
             }
 
             // 找到负载最小的机器
-            uint64_t min_load = machines[online[0]].getLoad();
+            uint64_t min_load = machines[online[0]].Load();
             *id = online[0];
             *m = &machines[online[0]];
             for (int i = 1; i < online.size(); i++)
             {
-                uint64_t cur_load = machines[online[i]].getLoad();
+                uint64_t cur_load = machines[online[i]].Load();
                 if (cur_load < min_load)
                 {
                     min_load = cur_load;
@@ -192,10 +154,10 @@ namespace ns_controller
             mtx.lock();
             for (auto it = online.begin(); it != online.end(); it++)
             {
-                if (*it = id)
+                if (*it == id)
                 {
                     online.erase(it);
-                    offline.emplace_back(*it);
+                    offline.push_back(id);
                     break;
                 }
             }
@@ -299,10 +261,10 @@ namespace ns_controller
                 if (!load_balance_.SmartChoice(&id, &m))
                     break;
                 
-                LOG(INFO) << "成功选择了" << id << "号主机，地址：" << m->getIp() << ":" << m->getPort() << "\n";
+                LOG(INFO) << "选择了" << id << "号主机，地址：" << m->ip << ":" << m->port << "\n";
                 
                 // 发起http请求，得到结果
-                Client client(m->getIp(), m->getPort());
+                Client client(m->ip, m->port);
                 m->IncreaseLoad();
                 if (auto res = client.Post("/compile_and_run", compile_json, "application/json;charset=utf-8"))
                 {
@@ -319,7 +281,7 @@ namespace ns_controller
                 }
                 else
                 {
-                    LOG(ERROR) << "当前请求的" << id << "号主机" << m->getIp() << ":" << m->getPort()  << "可能已经离线" << "\n";
+                    LOG(ERROR) << "当前请求的" << id << "号主机" << m->ip << ":" << m->port  << "可能已经离线" << "\n";
                     m->DecreaseLoad();
                     // 离线主机
                     load_balance_.OfflineMachine(id);

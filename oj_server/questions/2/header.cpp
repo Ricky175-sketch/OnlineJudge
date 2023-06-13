@@ -7,6 +7,6 @@
 class Solution {
 public:
     std::vector<int> quickSort(std::vector<int> nums) {
-        //请将你的代码写在这里
+        // 请将你的代码写在这里
     }
 };
