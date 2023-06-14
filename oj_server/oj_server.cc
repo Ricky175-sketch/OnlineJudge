@@ -1,15 +1,25 @@
 #include <iostream>
-
+#include <signal.h>
 #include "../comm/httplib.h"
 #include "oj_controller.hpp"
 
 using namespace httplib;
 using namespace ns_controller;
 
+static Controller *pcontroller = nullptr;
+
+void Recovry(int signum)
+{
+    pcontroller->RecoveryMachine();
+}
+
 int main()
 {
+    signal(SIGQUIT, Recovry);
+
     Server server;
     Controller controller;
+    pcontroller = &controller;
 
     server.Get("/all_questions", [&controller](const Request &req, Response &resp) {
         std::string html;

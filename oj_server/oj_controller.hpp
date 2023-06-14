@@ -5,6 +5,7 @@
 #include <vector>
 #include <mutex>
 #include <fstream>
+#include <algorithm>
 #include <cassert>
 #include <unistd.h>
 #include <jsoncpp/json/json.h>
@@ -31,7 +32,7 @@ namespace ns_controller
     // 提供服务的主机
     class Machine
     {
-    public:
+    private:
         std::string ip;  // 编译服务的ip
         int port;        // 编译服务的port
         uint64_t load;   // 编译服务的负载
@@ -40,6 +41,38 @@ namespace ns_controller
         Machine() : ip(""), port(0), load(0), mtx(nullptr)
         {}
         ~Machine() = default;
+
+        const std::string &getIp() const {
+            return ip;
+        }
+
+        void setIp(const std::string &ip) {
+            Machine::ip = ip;
+        }
+
+        int getPort() const {
+            return port;
+        }
+
+        void setPort(int port) {
+            Machine::port = port;
+        }
+
+        uint64_t getLoad() const {
+            return load;
+        }
+
+        void setLoad(uint64_t load) {
+            Machine::load = load;
+        }
+
+        std::mutex *getMtx() const {
+            return mtx;
+        }
+
+        void setMtx(std::mutex *mtx) {
+            Machine::mtx = mtx;
+        }
 
         // 安全地递增负载
         void IncreaseLoad()
@@ -56,6 +89,14 @@ namespace ns_controller
             if (mtx)
                 mtx->lock();
             --load;
+            if (mtx)
+                mtx->unlock();
+        }
+        void ResetLoad()
+        {
+            if (mtx)
+                mtx->lock();
+            load = 0;
             if (mtx)
                 mtx->unlock();
         }
@@ -108,10 +149,10 @@ namespace ns_controller
                     continue;
                 }
                 Machine m;
-                m.ip = tokens[0];
-                m.port = atoi(tokens[1].c_str());
-                m.load = 0;
-                m.mtx = new std::mutex();
+                m.setIp(tokens[0]);
+                m.setPort(atoi(tokens[1].c_str()));
+                m.setLoad(0);
+                m.setMtx(new std::mutex());
 
                 online.push_back(machines.size());
                 machines.push_back(m);
@@ -163,9 +204,14 @@ namespace ns_controller
             }
             mtx.unlock();
         }
-        void OnlineMachine(int id)
+        void OnlineMachine()
         {
-            // TODO
+            mtx.lock();
+            online.insert(online.end(), offline.begin(), offline.end());
+            offline.erase(offline.begin(), offline.end());
+            mtx.unlock();
+
+            LOG(INGO) << "所有主机已上线" << "\n";
         }
         // 用于测试的函数
         void ShowMachines()
@@ -195,6 +241,13 @@ namespace ns_controller
         ~Controller() = default;
 
         /*
+            重新上线所有的主机
+        */
+        void RecoveryMachine()
+        {
+            load_balance_.OnlineMachine();
+        }
+        /*
             根据所有的题目数据构建网页
         */
         bool AllQuestions(std::string *html)
@@ -202,6 +255,9 @@ namespace ns_controller
             std::vector<struct Question> all;
             if (model_.GetAllQuestions(&all))
             {
+                sort(all.begin(), all.end(), [](const struct Question &q1, const struct Question &q2) {
+                    return q1.number < q2.number;
+                });
                 view_.ExpandAllQuestions(all, html);
                 return true;
             }
@@ -261,11 +317,10 @@ namespace ns_controller
                 if (!load_balance_.SmartChoice(&id, &m))
                     break;
                 
-                LOG(INFO) << "选择了" << id << "号主机，地址：" << m->ip << ":" << m->port << "\n";
-                
                 // 发起http请求，得到结果
-                Client client(m->ip, m->port);
+                Client client(m->getIp(), m->getPort());
                 m->IncreaseLoad();
+                LOG(INFO) << "选择了" << id << "号主机，地址：" << m->getIp() << ":" << m->getPort() << "，负载：" << m->Load() << "\n";
                 if (auto res = client.Post("/compile_and_run", compile_json, "application/json;charset=utf-8"))
                 {
                     // 将请求得到的结果向上返回
@@ -281,7 +336,7 @@ namespace ns_controller
                 }
                 else
                 {
-                    LOG(ERROR) << "当前请求的" << id << "号主机" << m->ip << ":" << m->port  << "可能已经离线" << "\n";
+                    LOG(ERROR) << "当前请求的" << id << "号主机" << m->getIp() << ":" << m->getPort()  << "可能已经离线" << "\n";
                     m->DecreaseLoad();
                     // 离线主机
                     load_balance_.OfflineMachine(id);
