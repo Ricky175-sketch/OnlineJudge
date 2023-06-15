@@ -11,7 +11,7 @@
 #include "../comm/log.hpp"
 #include "../comm/util.hpp"
 
-namespace ns_model
+namespace ns_model_file
 {
     // 引入路径拼接功能
     using namespace ns_util;

@@ -5,11 +5,11 @@
 #include <vector>
 #include <ctemplate/template.h>
 
-#include "oj_model.hpp"
+#include "oj_model_mysql.hpp"
 
 namespace ns_view
 {
-    using namespace ns_model;
+    using namespace ns_model_mysql;
 
     class View
     {
